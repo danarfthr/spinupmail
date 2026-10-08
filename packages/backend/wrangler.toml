@@ -1,5 +1,6 @@
-# For more details on how to configure Wrangler, refer to:
-# https://developers.cloudflare.com/workers/wrangler/configuration/
+# Example Wrangler config
+# Make a copy of this file and name it as `wrangler.toml`
+# Replace placeholder IDs with your Cloudflare resource IDs.
 
 name = "spinupmail"
 main = "src/index.ts"
@@ -34,16 +35,18 @@ class_name = "FixedWindowRateLimiterDurableObject"
 [[d1_databases]]
 binding = "SUM_DB"
 database_name = "SUM_DB"
-database_id = "34c5ddb6-1c54-4aff-b307-5a104509a4ce"
+database_id = "992151ac-cb4e-4c42-b5a2-842d27057c33"
 migrations_dir = "drizzle"
 
 [[kv_namespaces]]
 binding = "SUM_KV"
-id = "2b0a16741ce345a4a177b48bbf2bfc30"
+id = "79559fb8209c44cf88a44313aea0f04b"
 
 [[r2_buckets]]
-bucket_name = "spinupmail-attachments"
 binding = "R2_BUCKET"
+bucket_name = "spinupmail-attachments"
+# Optional for local/preview
+preview_bucket_name = "spinupmail-attachments-preview"
 
 [[send_email]]
 name = "EMAIL"
@@ -60,29 +63,47 @@ max_retries = 2
 dead_letter_queue = "spinupmail-integration-dispatches-dlq"
 
 [vars]
-EMAIL_DOMAINS = "spinupmail.dev"
+EMAIL_DOMAINS = "danar.app"
+FORCED_MAIL_PREFIX = ""                                                           # e.g. if set to "temp", all addresses will start with "temp-"
+AUTH_ALLOWED_EMAIL_DOMAIN = "example.com"
+DASHBOARD_BASE_URL = "https://app.example.com"                                    # optional: used for Telegram "Open in Dashboard" button
+EXTENSION_REDIRECT_ORIGINS = "https://your-chromium-extension-id.chromiumapp.org"
 MAX_ADDRESSES_PER_ORGANIZATION = "10"
 MAX_INTEGRATIONS_PER_ORGANIZATION = "3"
 MAX_INTEGRATION_DISPATCHES_PER_ORGANIZATION_PER_DAY = "100"
 MAX_RECEIVED_EMAILS_PER_ORGANIZATION = "1000"
 MAX_RECEIVED_EMAILS_PER_ADDRESS = "100"
-RESEND_FROM_EMAIL = "Spinupmail <verify@spinupmail.com>"
 OPERATIONAL_EVENT_RETENTION_DAYS = "30"
 OPERATIONAL_EVENT_MAX_METADATA_BYTES = "4096"
 OPERATIONAL_EVENT_NOISY_RATE_LIMIT_WINDOW_SECONDS = "300"
 OPERATIONAL_EVENT_NOISY_RATE_LIMIT_MAX = "1"
-EMAIL_MAX_BYTES = "10485760"
+API_KEY_RATE_LIMIT_WINDOW = "60"
+API_KEY_RATE_LIMIT_MAX = "120"
+AUTH_RATE_LIMIT_WINDOW = "60"
+# Optional: set to override Better Auth's default global max
+AUTH_RATE_LIMIT_MAX = "100"
+AUTH_CHANGE_EMAIL_RATE_LIMIT_WINDOW = "3600"
+AUTH_CHANGE_EMAIL_RATE_LIMIT_MAX = "2"
+RESEND_FROM_EMAIL = "Spinupmail <verify@danar.app>"
+# Configure secrets via `wrangler secret put`:
+# BETTER_AUTH_SECRET, BETTER_AUTH_BASE_URL, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, RESEND_API_KEY, TURNSTILE_SECRET_KEY, INTEGRATION_SECRET_ENCRYPTION_KEY
+# INTEGRATION_SECRET_ENCRYPTION_KEY must be a base64-encoded 32-byte AES-GCM key.
+EMAIL_FORWARD_TO = ""
+EMAIL_MAX_BYTES = "524288"
+# Max body text/html bytes persisted per email row (oversized bodies are dropped)
 EMAIL_BODY_MAX_BYTES = "524288"
 EMAIL_ATTACHMENT_MAX_BYTES = "10485760"
+# Cap total stored email attachment bytes per organization; defaults to 104857600 (100MB).
+# New attachments are skipped once the organization would exceed this quota.
 EMAIL_ATTACHMENT_MAX_TOTAL_BYTES_PER_ORGANIZATION = "104857600"
+# Set to "false" to ignore inbound attachments and disable attachment download/UI surfaces
+EMAIL_ATTACHMENTS_ENABLED = "true"
+# Storage optimization flags (default false when unset)
+EMAIL_STORE_HEADERS_IN_DB = "false"
+EMAIL_STORE_RAW_IN_DB = "false"
+# Optional debug mode: store raw MIME in private R2 for authenticated retrieval
+EMAIL_STORE_RAW_IN_R2 = "false"
 INTEGRATION_QUEUE_RETRY_WINDOW_SECONDS = "21600"
 INTEGRATION_QUEUE_BASE_DELAY_SECONDS = "30"
 INTEGRATION_QUEUE_MAX_DELAY_SECONDS = "1800"
 INTEGRATION_QUEUE_JITTER_SECONDS = "10"
-
-# To protect the database id, kv id, we ignore this
-# file when committing to the repo by running once:
-# git update-index --assume-unchanged wrangler.toml
-#
-# Put back in git if you need to commit this file:
-# git update-index --no-assume-unchanged wrangler.toml
